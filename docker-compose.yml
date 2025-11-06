@@ -1,0 +1,48 @@
+version: "3.8"
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    restart: unless-stopped
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto/config/passwordfile:/mosquitto/config/passwordfile:ro
+      - mosq_data:/mosquitto/data
+      - mosq_log:/mosquitto/log
+
+  mongo:
+    image: mongo:6.0
+    restart: unless-stopped
+    container_name: mongo
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"   # you can remove/expose only for debugging; avoid exposing in prod
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    container_name: flask-backend
+    environment:
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - MQTT_TOPICS=sensors/mq135/#   # change as needed
+      - MQTT_USER=my_mqtt_user
+      - MQTT_PASS=${MQTT_PASS}        # set in .env on server
+      - MONGO_URI=mongodb://mongo:27017
+      - MONGO_DB=mqdb
+      - MONGO_COLLECTION=readings
+    depends_on:
+      - mosquitto
+      - mongo
+    ports:
+      - "5000:5000"
+    # volumes:  # no persistent volume needed for backend itself
+
+volumes:
+  mosq_data:
+  mosq_log:
+  mongo_data:
+
