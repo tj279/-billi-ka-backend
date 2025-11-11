@@ -71,13 +71,20 @@ def on_message(client, userdata, msg):
         print("Error handling message:", e)
 
 def mqtt_thread():
-    client = mqtt.Client()
-    if MQTT_USER:
-        client.username_pw_set(MQTT_USER, MQTT_PASS)
-    client.on_connect = on_connect
-    client.on_message = on_message
-    client.connect(MQTT_HOST, MQTT_PORT, 60)
-    client.loop_forever()
+    try:
+        print(f"Starting MQTT thread to {MQTT_HOST}:{MQTT_PORT}", flush=True)
+        client = mqtt.Client()
+        if MQTT_USER:
+            print(f"Using MQTT user: {MQTT_USER}", flush=True)
+            client.username_pw_set(MQTT_USER, MQTT_PASS)
+        client.on_connect = on_connect
+        client.on_message = on_message
+
+        client.connect(MQTT_HOST, MQTT_PORT, 60)
+        print("MQTT connect() called, entering loop_forever()", flush=True)
+        client.loop_forever()
+    except Exception as e:
+        print("MQTT thread crashed:", e, flush=True)
 
 if __name__ == "__main__":
     # Start MQTT background thread
